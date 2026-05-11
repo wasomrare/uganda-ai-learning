@@ -4,6 +4,15 @@ set -e
 echo "==== Uganda Primary AI Learning System ===="
 
 # Wait for PostgreSQL
+# Parse host/port from DATABASE_URL if DB_HOST not explicitly set
+if [ -z "$DB_HOST" ] && [ -n "$DATABASE_URL" ]; then
+  DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+)[:/].*|\1|')
+  DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*@[^:]+:([0-9]+)/.*|\1|')
+fi
+if [ -z "$DB_HOST" ] && [ -n "$DATABASE_PUBLIC_URL" ]; then
+  DB_HOST=$(echo "$DATABASE_PUBLIC_URL" | sed -E 's|.*@([^:/]+)[:/].*|\1|')
+  DB_PORT=$(echo "$DATABASE_PUBLIC_URL" | sed -E 's|.*@[^:]+:([0-9]+)/.*|\1|')
+fi
 DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 echo "Waiting for database at $DB_HOST:$DB_PORT ..."
