@@ -9,10 +9,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         from apps.users.models import User
 
-        username = os.environ.get('ADMIN_USERNAME', 'admin')
-        password = os.environ.get('ADMIN_PASSWORD', 'Admin@Uganda2024!')
+        username = os.environ.get('ADMIN_USERNAME', 'Evinia')
+        password = os.environ.get('ADMIN_PASSWORD', 'johnson@angel')
         email = os.environ.get('ADMIN_EMAIL', 'admin@ugandalearn.com')
-        first_name = os.environ.get('ADMIN_FIRST_NAME', 'System')
+        first_name = os.environ.get('ADMIN_FIRST_NAME', 'Evinia')
         last_name = os.environ.get('ADMIN_LAST_NAME', 'Administrator')
 
         existing = User.objects.filter(role='super_admin').first()
