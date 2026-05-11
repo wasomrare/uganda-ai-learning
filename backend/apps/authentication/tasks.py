@@ -1,11 +1,6 @@
 """Authentication background tasks."""
 try:
-    try:
     from celery import shared_task
-except ImportError:
-    def shared_task(*args, **kwargs):
-        def decorator(func): return func
-        return decorator if args and callable(args[0]) else decorator
 except ImportError:
     def shared_task(*args, **kwargs):
         def decorator(func): return func
