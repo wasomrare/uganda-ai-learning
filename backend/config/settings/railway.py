@@ -235,8 +235,14 @@ SIMPLE_JWT = {
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
+    'https://innovative-reverence-production.up.railway.app',
+    'https://uganda-ai-learning-production.up.railway.app',
     'http://localhost:3000',
+    'http://localhost:8080',
     'http://127.0.0.1:3000',
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://.*\.up\.railway\.app$',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
