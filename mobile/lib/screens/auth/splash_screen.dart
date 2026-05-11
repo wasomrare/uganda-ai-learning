@@ -1,31 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../providers/auth_provider.dart';
 import '../../config/theme.dart';
 
-class SplashScreen extends ConsumerWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen(authStateProvider, (_, next) {
-      next.whenData((state) {
-        if (state.isLoggedIn) {
-          final role = state.user?.role ?? 'student';
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (context.mounted) {
-              context.go(role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home');
-            }
-          });
-        } else {
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (context.mounted) context.go('/login');
-          });
-        }
-      });
-    });
-
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(

@@ -20,19 +20,33 @@ import '../screens/teacher/teacher_home_screen.dart';
 import '../screens/teacher/teacher_assessments_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final notifier = ValueNotifier<int>(0);
+  ref.listen<AsyncValue<AuthState>>(authStateProvider, (_, __) {
+    notifier.value++;
+  });
+  ref.onDispose(notifier.dispose);
 
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final isLoggedIn = authState.valueOrNull?.isLoggedIn ?? false;
+      final authAsync = ref.read(authStateProvider);
       final isSplash = state.matchedLocation == '/splash';
       final isLogin = state.matchedLocation == '/login';
 
-      if (isSplash) return null;
+      // Still loading — stay on splash
+      if (authAsync.isLoading) return isSplash ? null : '/splash';
+
+      final isLoggedIn = authAsync.valueOrNull?.isLoggedIn ?? false;
+      final role = authAsync.valueOrNull?.user?.role ?? 'student';
+
+      if (isSplash) {
+        return isLoggedIn
+            ? (role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home')
+            : '/login';
+      }
       if (!isLoggedIn && !isLogin) return '/login';
       if (isLoggedIn && isLogin) {
-        final role = authState.valueOrNull?.user?.role ?? 'student';
         return role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home';
       }
       return null;
