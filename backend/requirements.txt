@@ -11,7 +11,7 @@ django-allauth==64.2.1
 
 # Database
 psycopg2-binary==2.9.9
-django-pgcrypto==2.5.0
+django-pgcrypto==3.1.0
 
 # Cache & Queue
 redis==5.0.8
