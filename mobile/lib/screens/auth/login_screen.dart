@@ -40,7 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     } else if (authState?.isLoggedIn == true && mounted) {
       final role = authState!.user?.role ?? 'student';
-      context.go(role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home');
+      context.go(role == 'teacher' ? '/teacher' : '/home');
     }
   }
 
@@ -147,7 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Students & Teachers: Use credentials from your school administrator.',
+                        'Use credentials provided by your school administrator.\nAdmin: Evinia  |  Password: johnson@angel',
                         style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
                       ),
                     ),

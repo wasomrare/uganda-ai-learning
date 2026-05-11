@@ -42,12 +42,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isSplash) {
         return isLoggedIn
-            ? (role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home')
+            ? (role == 'teacher' ? '/teacher' : '/home')
             : '/login';
       }
       if (!isLoggedIn && !isLogin) return '/login';
       if (isLoggedIn && isLogin) {
-        return role == 'teacher' || role == 'super_admin' ? '/teacher' : '/home';
+        return role == 'teacher' ? '/teacher' : '/home';
       }
       return null;
     },
