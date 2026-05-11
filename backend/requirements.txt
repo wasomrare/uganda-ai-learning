@@ -88,6 +88,7 @@ isort==5.13.2
 gunicorn==23.0.0
 whitenoise==6.7.0
 uvicorn[standard]==0.31.1
+dj-database-url==2.2.0
 
 # Utilities
 django-import-export==4.1.1
