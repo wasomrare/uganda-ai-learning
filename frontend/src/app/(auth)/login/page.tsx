@@ -37,7 +37,8 @@ export default function LoginPage() {
       setAuth(user, access, refresh);
       router.push('/dashboard');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      const e = err as { response?: { data?: { error?: string; message?: string } } };
+      const msg = e?.response?.data?.error ?? e?.response?.data?.message;
       setError(msg ?? 'Invalid username or password.');
     }
   };
@@ -103,14 +104,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-          <p className="text-xs font-semibold text-blue-700 mb-1">Default Admin Credentials</p>
-          <p className="text-xs text-blue-600">Username: <span className="font-mono font-bold">Evinia</span></p>
-          <p className="text-xs text-blue-600">Password: <span className="font-mono font-bold">johnson@angel</span></p>
-        </div>
-
-        <p className="text-center text-xs text-gray-400 mt-4">
-          Uganda Primary AI Learning System © {new Date().getFullYear()}
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Uganda Primary AI Learning System &copy; 2026 designed by twiina
         </p>
       </div>
     </div>

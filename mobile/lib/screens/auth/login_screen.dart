@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
 
@@ -134,29 +135,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, color: AppColors.primary, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Use credentials provided by your school administrator.\nAdmin: Evinia  |  Password: johnson@angel',
-                        style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 24),
+              const _ContactCard(),
+              const SizedBox(height: 16),
+              Text(
+                'Uganda Primary AI Learning System © 2026 designed by twiina',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ContactCard extends StatelessWidget {
+  const _ContactCard();
+
+  Future<void> _launch(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(children: [
+            Icon(Icons.support_agent_rounded, color: AppColors.primary, size: 18),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Need help? Contact Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textPrimary)),
+                Text('MATSIKO JOHNSON', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(child: _Btn(icon: Icons.email_outlined, label: 'Email', color: const Color(0xFFEA4335), onTap: () => _launch('mailto:twiinarides@gmail.com'))),
+            const SizedBox(width: 8),
+            Expanded(child: _Btn(icon: Icons.chat_rounded, label: 'WhatsApp', color: const Color(0xFF25D366), onTap: () => _launch('https://wa.me/256764195740'))),
+            const SizedBox(width: 8),
+            Expanded(child: _Btn(icon: Icons.call_rounded, label: 'Call', color: AppColors.primary, onTap: () => _launch('tel:0764195740'))),
+          ]),
+        ],
+      ),
+    );
+  }
+}
+
+class _Btn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _Btn({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(9), border: Border.all(color: color.withOpacity(0.25))),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(height: 3),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+        ]),
       ),
     );
   }
