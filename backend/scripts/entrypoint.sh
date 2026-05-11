@@ -2,17 +2,32 @@
 set -e
 
 echo "==== Uganda Primary AI Learning System ===="
-echo "Waiting for database..."
-while ! nc -z $DB_HOST $DB_PORT; do
-  sleep 0.5
+
+# Wait for PostgreSQL
+DB_HOST="${DB_HOST:-localhost}"
+DB_PORT="${DB_PORT:-5432}"
+echo "Waiting for database at $DB_HOST:$DB_PORT ..."
+for i in $(seq 1 30); do
+  nc -z "$DB_HOST" "$DB_PORT" && break
+  echo "  attempt $i/30 — retrying in 2s..."
+  sleep 2
 done
 echo "Database is ready!"
 
-echo "Waiting for Redis..."
-while ! nc -z redis 6379; do
-  sleep 0.5
-done
-echo "Redis is ready!"
+# Wait for Redis only if REDIS_URL or REDIS_HOST is set
+if [ -n "$REDIS_URL" ] || [ -n "$REDIS_HOST" ]; then
+  REDIS_HOST_CLEAN="${REDIS_HOST:-redis}"
+  REDIS_PORT_CLEAN="${REDIS_PORT:-6379}"
+  echo "Waiting for Redis at $REDIS_HOST_CLEAN:$REDIS_PORT_CLEAN ..."
+  for i in $(seq 1 15); do
+    nc -z "$REDIS_HOST_CLEAN" "$REDIS_PORT_CLEAN" && break
+    echo "  attempt $i/15 — retrying in 2s..."
+    sleep 2
+  done
+  echo "Redis is ready!"
+else
+  echo "Redis not configured — skipping."
+fi
 
 echo "Running migrations..."
 python manage.py migrate --noinput
