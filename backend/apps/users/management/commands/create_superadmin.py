@@ -8,15 +8,29 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from apps.users.models import User
-        if User.objects.filter(role='super_admin').exists():
-            self.stdout.write(self.style.WARNING('Super admin already exists. Skipping.'))
-            return
 
         username = os.environ.get('ADMIN_USERNAME', 'admin')
         password = os.environ.get('ADMIN_PASSWORD', 'Admin@Uganda2024!')
         email = os.environ.get('ADMIN_EMAIL', 'admin@ugandalearn.com')
         first_name = os.environ.get('ADMIN_FIRST_NAME', 'System')
         last_name = os.environ.get('ADMIN_LAST_NAME', 'Administrator')
+
+        existing = User.objects.filter(role='super_admin').first()
+        if existing:
+            existing.set_password(password)
+            existing.force_password_change = False
+            existing.is_active = True
+            existing.is_verified = True
+            existing.is_staff = True
+            existing.is_superuser = True
+            existing.save(update_fields=[
+                'password', 'force_password_change', 'is_active',
+                'is_verified', 'is_staff', 'is_superuser',
+            ])
+            self.stdout.write(self.style.SUCCESS(
+                f'Super admin updated: username={existing.username} (password reset)'
+            ))
+            return
 
         User.objects.create_superuser(
             username=username,
