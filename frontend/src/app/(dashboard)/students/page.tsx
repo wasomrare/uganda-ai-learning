@@ -2,9 +2,144 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentsApi, classesApi } from '@/lib/api';
-import { Users, Plus, Search, MoreVertical, ToggleLeft, ToggleRight, Loader2, UserCheck, UserX } from 'lucide-react';
+import { Users, Plus, Search, ToggleLeft, ToggleRight, Loader2, UserCheck, UserX, X, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { cn, formatDate, getInitials } from '@/lib/utils';
 import type { Student } from '@/types';
+
+function CreateStudentModal({ classes, onClose, onCreated }: {
+  classes: { id: string; name: string; class_level: string }[];
+  onClose: () => void;
+  onCreated: (data: { student: Student; temporary_password: string }) => void;
+}) {
+  const [form, setForm] = useState({ first_name: '', last_name: '', username: '', class_id: '', gender: '', stream: '', date_of_birth: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.first_name || !form.last_name || !form.username) { setError('First name, last name, and username are required.'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      const payload: Record<string, string> = { first_name: form.first_name, last_name: form.last_name, username: form.username };
+      if (form.class_id) payload.class_id = form.class_id;
+      if (form.gender) payload.gender = form.gender;
+      if (form.stream) payload.stream = form.stream;
+      if (form.date_of_birth) payload.date_of_birth = form.date_of_birth;
+      const res = await studentsApi.create(payload);
+      onCreated(res.data.data);
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string; error?: string } } };
+      const errs = e?.response?.data?.errors;
+      if (errs) { const first = Object.values(errs)[0]; setError(Array.isArray(first) ? first[0] : String(first)); }
+      else setError(e?.response?.data?.message ?? e?.response?.data?.error ?? 'Failed to create student.');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Add New Student</h2>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{error}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+              <input value={form.first_name} onChange={e => set('first_name', e.target.value)} placeholder="First name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+              <input value={form.last_name} onChange={e => set('last_name', e.target.value)} placeholder="Last name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+            <input value={form.username} onChange={e => set('username', e.target.value)} placeholder="e.g. john_doe"
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+              <select value={form.class_id} onChange={e => set('class_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                <option value="">Select class</option>
+                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+              <select value={form.gender} onChange={e => set('gender', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stream</label>
+              <input value={form.stream} onChange={e => set('stream', e.target.value)} placeholder="e.g. A, B"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <input type="date" value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400">A temporary password will be generated automatically.</p>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+            <button type="submit" disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
+              {loading && <Loader2 size={14} className="animate-spin" />}
+              {loading ? 'Creating…' : 'Create Student'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function PasswordRevealModal({ name, username, password, onClose }: { name: string; username: string; password: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [show, setShow] = useState(false);
+  const copy = () => { navigator.clipboard.writeText(password); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div className="text-center mb-4">
+          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <UserCheck size={22} className="text-green-600" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">{name} created!</h2>
+          <p className="text-sm text-gray-500 mt-1">Share these login credentials with the student.</p>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-4">
+          <div><p className="text-xs text-gray-400 mb-0.5">Username</p><p className="font-mono text-sm font-semibold text-gray-800">{username}</p></div>
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">Temporary Password</p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-sm font-semibold text-gray-800 flex-1">{show ? password : '••••••••••'}</p>
+              <button onClick={() => setShow(!show)} className="text-gray-400 hover:text-gray-600">{show ? <EyeOff size={14} /> : <Eye size={14} />}</button>
+              <button onClick={copy} className="text-gray-400 hover:text-green-600 transition">{copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}</button>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">⚠ Save this password now. It won&apos;t be shown again.</p>
+        <button onClick={onClose} className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition">Done</button>
+      </div>
+    </div>
+  );
+}
 
 export default function StudentsPage() {
   const qc = useQueryClient();
@@ -12,6 +147,7 @@ export default function StudentsPage() {
   const [classFilter, setClassFilter] = useState('');
   const [page, setPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
+  const [createdResult, setCreatedResult] = useState<{ student: Student; temporary_password: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['students', search, classFilter, page],
@@ -34,6 +170,22 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-5">
+      {showCreate && (
+        <CreateStudentModal
+          classes={classes ?? []}
+          onClose={() => setShowCreate(false)}
+          onCreated={(data) => { setShowCreate(false); setCreatedResult(data); qc.invalidateQueries({ queryKey: ['students'] }); }}
+        />
+      )}
+      {createdResult && (
+        <PasswordRevealModal
+          name={`${createdResult.student.user.first_name} ${createdResult.student.user.last_name}`}
+          username={createdResult.student.user.username}
+          password={createdResult.temporary_password}
+          onClose={() => setCreatedResult(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

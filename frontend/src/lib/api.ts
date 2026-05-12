@@ -51,7 +51,7 @@ export const authApi = {
     api.post('/auth/google/', { id_token: idToken }),
   logout: (refresh: string) =>
     api.post('/auth/logout/', { refresh }),
-  me: () => api.get('/auth/me/'),
+  me: () => api.get('/users/me/'),
 };
 
 export const studentsApi = {
