@@ -29,23 +29,46 @@ async function proxyRequest(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
     if (text) body = text;
   }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+
   try {
     const upstream = await fetch(targetUrl, {
       method: req.method,
       headers,
       body,
       cache: 'no-store',
+      signal: controller.signal,
     });
+
+    clearTimeout(timer);
+
+    const contentType = upstream.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+      return NextResponse.json(
+        { error: `Backend returned status ${upstream.status}`, detail: 'Backend may be down or starting up — please try again.' },
+        { status: 502 }
+      );
+    }
+
     const text = await upstream.text();
     return new NextResponse(text, {
       status: upstream.status,
-      headers: {
-        'content-type': upstream.headers.get('content-type') ?? 'application/json',
-      },
+      headers: { 'content-type': 'application/json' },
     });
   } catch (err) {
+    clearTimeout(timer);
     const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: 'Backend unreachable', detail: msg }, { status: 502 });
+    const isTimeout = msg.includes('abort') || msg.includes('timeout');
+    return NextResponse.json(
+      {
+        error: isTimeout ? 'Backend timed out' : 'Backend unreachable',
+        detail: isTimeout
+          ? 'The backend took too long to respond. It may be starting up — wait 30 seconds and try again.'
+          : msg,
+      },
+      { status: 502 }
+    );
   }
 }
 
