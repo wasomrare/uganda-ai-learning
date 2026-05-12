@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const _raw = (
   process.env.BACKEND_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
   'https://uganda-ai-learning-production.up.railway.app/api/v1'
 ).replace(/\/$/, '');
 
@@ -19,11 +18,14 @@ async function getAdminToken(): Promise<string | null> {
   if (loginInFlight) return loginInFlight;
   loginInFlight = (async () => {
     try {
+      const ac = new AbortController();
+      setTimeout(() => ac.abort(), 8000);
       const res = await fetch(`${BACKEND_BASE}/auth/login/`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
         cache: 'no-store',
+        signal: ac.signal,
       });
       if (!res.ok) return null;
       const data = await res.json();
