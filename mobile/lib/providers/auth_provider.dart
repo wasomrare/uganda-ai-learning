@@ -1,7 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../config/constants.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
+
+final _googleSignIn = GoogleSignIn(
+  scopes: ['email', 'profile'],
+  serverClientId: AppConstants.googleWebClientId,
+);
 
 class AuthState {
   final UserModel? user;
@@ -59,6 +66,41 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
       await storage.saveUser(user.toJson());
       state = AsyncValue.data(AuthState(user: user, isLoggedIn: true));
     } catch (e) {
+      state = AsyncValue.data(AuthState(
+        isLoggedIn: false,
+        error: _parseError(e),
+      ));
+    }
+  }
+
+  Future<void> googleLogin() async {
+    state = const AsyncValue.loading();
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        state = const AsyncValue.data(AuthState(isLoggedIn: false));
+        return;
+      }
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        state = AsyncValue.data(const AuthState(
+          isLoggedIn: false,
+          error: 'Could not get Google ID token. Please try again.',
+        ));
+        return;
+      }
+      final api = ref.read(apiServiceProvider);
+      final storage = ref.read(storageServiceProvider);
+      final res = await api.googleLogin(idToken);
+      final data = res.data['data'];
+      await storage.saveAccessToken(data['access']);
+      await storage.saveRefreshToken(data['refresh']);
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+      await storage.saveUser(user.toJson());
+      state = AsyncValue.data(AuthState(user: user, isLoggedIn: true));
+    } catch (e) {
+      await _googleSignIn.signOut();
       state = AsyncValue.data(AuthState(
         isLoggedIn: false,
         error: _parseError(e),

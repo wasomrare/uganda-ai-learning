@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
-  static const String wsBaseUrl = 'ws://10.0.2.2:8000/ws';
+  static const String baseUrl = 'https://uganda-ai-learning-production.up.railway.app/api/v1';
+
+  // Google Sign-In: replace with your Web Application OAuth 2.0 Client ID from
+  // https://console.cloud.google.com/apis/credentials
+  static const String googleWebClientId = 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com';
+  static const String wsBaseUrl = 'wss://uganda-ai-learning-production.up.railway.app/ws';
 
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';

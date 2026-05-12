@@ -40,6 +40,9 @@ dependencies:
   # WebSocket
   web_socket_channel: ^2.4.5
 
+  # Google Sign-In
+  google_sign_in: ^6.2.1
+
   # Links
   url_launcher: ^6.3.0
 

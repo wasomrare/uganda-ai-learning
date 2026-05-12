@@ -6,8 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -39,7 +42,21 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const e = err as { response?: { data?: { error?: string; message?: string } } };
       const msg = e?.response?.data?.error ?? e?.response?.data?.message;
-      setError(msg ?? 'Invalid username or password.');
+      setError(msg ?? 'Login failed. Please try again.');
+    }
+  };
+
+  const onGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    setError('');
+    try {
+      const res = await authApi.googleLogin(credentialResponse.credential);
+      const { access, refresh, user } = res.data.data;
+      setAuth(user, access, refresh);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e?.response?.data?.error ?? 'Google sign-in failed. Please try again.');
     }
   };
 
@@ -102,6 +119,27 @@ export default function LoginPage() {
               {isSubmitting ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
+
+          {GOOGLE_CLIENT_ID && (
+            <>
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-xs text-gray-400">or</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={onGoogleSuccess}
+                    onError={() => setError('Google sign-in failed. Please try again.')}
+                    text="continue_with"
+                    shape="rectangular"
+                    width="100%"
+                  />
+                </div>
+              </GoogleOAuthProvider>
+            </>
+          )}
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">

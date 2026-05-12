@@ -2,11 +2,12 @@ from django.urls import path
 from .views import (
     LoginView, LogoutView, TokenRefreshView,
     PasswordResetRequestView, PasswordResetConfirmView,
-    LoginHistoryView, MyDevicesView,
+    LoginHistoryView, MyDevicesView, GoogleLoginView,
 )
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='auth-login'),
+    path('google/', GoogleLoginView.as_view(), name='auth-google'),
     path('logout/', LogoutView.as_view(), name='auth-logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='auth-token-refresh'),
     path('password/reset/', PasswordResetRequestView.as_view(), name='auth-password-reset'),

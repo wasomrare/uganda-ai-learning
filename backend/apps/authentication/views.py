@@ -25,6 +25,93 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
+class GoogleLoginView(APIView):
+    """Login or auto-register via Google ID token. No email verification required."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token_str = request.data.get('id_token')
+        if not id_token_str:
+            return Response({'error': 'id_token is required.'}, status=400)
+
+        google_client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
+        if not google_client_id:
+            return Response({'error': 'Google login is not configured on this server.'}, status=503)
+
+        try:
+            from google.oauth2 import id_token as google_id_token
+            from google.auth.transport import requests as google_requests
+            idinfo = google_id_token.verify_oauth2_token(
+                id_token_str,
+                google_requests.Request(),
+                google_client_id,
+            )
+        except ValueError:
+            return Response({'error': 'Invalid or expired Google token.'}, status=400)
+
+        email = idinfo.get('email', '')
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+
+        if not email:
+            return Response({'error': 'Google account must have an email address.'}, status=400)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            base = email.split('@')[0]
+            username, n = base, 1
+            while User.objects.filter(username=username).exists():
+                username = f'{base}{n}'
+                n += 1
+            user = User(
+                username=username,
+                email=email,
+                first_name=first_name or base,
+                last_name=last_name or '',
+                role='student',
+                is_active=True,
+                is_verified=True,
+                force_password_change=False,
+            )
+            user.set_unusable_password()
+            user.save()
+        else:
+            changed = []
+            if not user.is_verified:
+                user.is_verified = True
+                changed.append('is_verified')
+            if user.force_password_change:
+                user.force_password_change = False
+                changed.append('force_password_change')
+            if changed:
+                user.save(update_fields=changed)
+
+        ip = get_client_ip(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+        LoginHistory.objects.create(
+            user=user,
+            ip_address=ip or None,
+            user_agent=ua[:255],
+            success=True,
+            failure_reason='',
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(success_response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': str(user.id),
+                'username': user.username,
+                'full_name': user.get_full_name(),
+                'email': user.email,
+                'role': user.role,
+                'avatar': None,
+                'force_password_change': False,
+            },
+        }, 'Google login successful.'))
+
+
 class LoginView(APIView):
     """Login endpoint — returns JWT access + refresh tokens."""
     permission_classes = [AllowAny]

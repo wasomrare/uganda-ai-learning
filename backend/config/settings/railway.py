@@ -122,6 +122,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
 ]
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 
 # ============================================================
 # INTERNATIONALISATION

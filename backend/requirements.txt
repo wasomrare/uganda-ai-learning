@@ -8,6 +8,8 @@ django-extensions==3.2.3
 # Authentication
 djangorestframework-simplejwt==5.3.1
 django-allauth==64.2.1
+google-auth==2.35.0
+google-auth-httplib2==0.2.0
 
 # Database
 psycopg2-binary==2.9.9

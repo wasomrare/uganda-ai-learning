@@ -18,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _googleLoading = false;
 
   @override
   void dispose() {
@@ -42,6 +43,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } else if (authState?.isLoggedIn == true && mounted) {
       final role = authState!.user?.role ?? 'student';
       context.go(role == 'teacher' ? '/teacher' : '/home');
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _googleLoading = true);
+    await ref.read(authStateProvider.notifier).googleLogin();
+    setState(() => _googleLoading = false);
+    final authState = ref.read(authStateProvider).valueOrNull;
+    if (authState?.error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authState!.error!), backgroundColor: AppColors.error),
+      );
+    } else if (authState?.isLoggedIn == true && mounted) {
+      final role = authState!.user?.role ?? 'student';
+      context.go(role == 'super_admin' ? '/home' : role == 'teacher' ? '/teacher' : '/home');
     }
   }
 
@@ -135,7 +151,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('or', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: (_loading || _googleLoading) ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: Color(0xFFDDDDDD)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    backgroundColor: Colors.white,
+                  ),
+                  icon: _googleLoading
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Image.asset('assets/icons/google.png', height: 20, width: 20,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 22, color: Color(0xFFEA4335))),
+                  label: Text(
+                    _googleLoading ? 'Signing in…' : 'Continue with Google',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
               const _ContactCard(),
               const SizedBox(height: 16),
               Text(

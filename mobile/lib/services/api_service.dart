@@ -17,6 +17,7 @@ class ApiService {
       baseUrl: AppConstants.baseUrl,
       connectTimeout: const Duration(seconds: AppConstants.connectTimeout),
       receiveTimeout: const Duration(seconds: AppConstants.receiveTimeout),
+      sendTimeout: const Duration(seconds: AppConstants.connectTimeout),
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
     ));
 
@@ -29,6 +30,18 @@ class ApiService {
         return handler.next(options);
       },
       onError: (error, handler) async {
+        final isNetworkError = error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout ||
+            error.type == DioExceptionType.connectionError;
+        final retryCount = error.requestOptions.extra['retryCount'] ?? 0;
+        if (isNetworkError && retryCount < 2) {
+          error.requestOptions.extra['retryCount'] = retryCount + 1;
+          await Future.delayed(Duration(seconds: retryCount + 1));
+          try {
+            final response = await _dio.fetch(error.requestOptions);
+            return handler.resolve(response);
+          } catch (_) {}
+        }
         if (error.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
@@ -47,7 +60,7 @@ class ApiService {
     try {
       final refresh = await _storage.getRefreshToken();
       if (refresh == null) return false;
-      final res = await Dio().post('${AppConstants.baseUrl}/auth/refresh/', data: {'refresh': refresh});
+      final res = await _dio.post('/auth/refresh/', data: {'refresh': refresh});
       await _storage.saveAccessToken(res.data['access']);
       return true;
     } catch (_) {
@@ -71,6 +84,9 @@ class ApiService {
   // Auth
   Future<Response> login(String username, String password) =>
       _dio.post('/auth/login/', data: {'username': username, 'password': password});
+
+  Future<Response> googleLogin(String idToken) =>
+      _dio.post('/auth/google/', data: {'id_token': idToken});
 
   Future<Response> logout(String refresh) =>
       _dio.post('/auth/logout/', data: {'refresh': refresh});
