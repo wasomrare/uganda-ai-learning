@@ -34,12 +34,17 @@ export default function LoginPage() {
       setAuth(fullUser, access, refresh);
       router.replace('/dashboard');
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { error?: string; message?: string; detail?: string; errors?: Record<string, string[]> } } };
-      const d = e?.response?.data;
-      const msg = d?.error ?? d?.message ?? d?.detail
-        ?? (d?.errors ? Object.values(d.errors).flat()[0] : null)
-        ?? 'Login failed. Please check your credentials and try again.';
-      setError(String(msg));
+      console.error('[Login error]', err);
+      const e = err as { response?: { status?: number; data?: { error?: string; message?: string; detail?: string; errors?: Record<string, string[]> } }; message?: string };
+      if (!e?.response) {
+        setError(`Cannot reach the server. Check your API URL or try again. (${e?.message ?? 'Network error'})`);
+      } else {
+        const d = e.response.data;
+        const msg = d?.error ?? d?.message ?? d?.detail
+          ?? (d?.errors ? Object.values(d.errors).flat()[0] : null)
+          ?? `Server returned status ${e.response.status}`;
+        setError(String(msg));
+      }
     } finally {
       setLoading(false);
     }
@@ -98,6 +103,9 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-gray-400 mt-6">
           Uganda Primary AI Learning System © 2026
+        </p>
+        <p className="text-center text-xs text-gray-300 mt-1 break-all">
+          API: {process.env.NEXT_PUBLIC_API_URL ?? 'https://uganda-ai-learning-production.up.railway.app/api/v1'}
         </p>
       </div>
     </div>
