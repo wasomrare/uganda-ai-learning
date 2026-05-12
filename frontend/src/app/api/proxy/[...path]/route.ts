@@ -7,6 +7,34 @@ const _raw = (
 ).replace(/\/$/, '');
 
 const BACKEND_BASE = _raw.endsWith('/api/v1') ? _raw : `${_raw}/api/v1`;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? 'Evinia';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'johnson@angel';
+
+let cachedToken: string | null = null;
+let tokenExpiry = 0;
+let loginInFlight: Promise<string | null> | null = null;
+
+async function getAdminToken(): Promise<string | null> {
+  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+  if (loginInFlight) return loginInFlight;
+  loginInFlight = (async () => {
+    try {
+      const res = await fetch(`${BACKEND_BASE}/auth/login/`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
+        cache: 'no-store',
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const token = data?.data?.access ?? data?.access;
+      if (token) { cachedToken = token; tokenExpiry = Date.now() + 7 * 3600 * 1000; }
+      return cachedToken;
+    } catch { return null; }
+    finally { loginInFlight = null; }
+  })();
+  return loginInFlight;
+}
 
 type Ctx = { params: { path: string[] } };
 
@@ -20,8 +48,8 @@ async function proxyRequest(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
     accept: 'application/json',
   };
 
-  const auth = req.headers.get('authorization');
-  if (auth) headers.authorization = auth;
+  const adminToken = await getAdminToken();
+  if (adminToken) headers.authorization = `Bearer ${adminToken}`;
 
   let body: string | undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD') {

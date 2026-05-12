@@ -9,9 +9,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
-import Cookies from 'js-cookie';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -31,16 +28,12 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, clearAuth, refreshToken } = useAuthStore();
+  const { user, clearAuth } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      if (refreshToken) await authApi.logout(refreshToken);
-    } catch { /* ignore */ }
+  const handleLogout = () => {
     clearAuth();
-    router.push('/login');
+    window.location.reload();
   };
 
   return (
@@ -89,14 +82,14 @@ export default function Sidebar() {
 
       {/* User + Logout */}
       <div className="border-t border-gray-800 p-3">
-        {!collapsed && user && (
+        {!collapsed && (
           <div className="flex items-center gap-3 px-2 py-2 mb-2">
             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-              {user.first_name?.[0]}{user.last_name?.[0]}
+              {user ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}` : 'A'}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
-              <p className="text-xs text-gray-400 truncate capitalize">{user.role?.replace('_', ' ')}</p>
+              <p className="text-sm font-medium truncate">{user ? `${user.first_name} ${user.last_name}` : 'Admin'}</p>
+              <p className="text-xs text-gray-400 truncate capitalize">{user?.role?.replace('_', ' ') ?? 'Super Admin'}</p>
             </div>
           </div>
         )}
