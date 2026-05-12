@@ -104,9 +104,6 @@ export default function LoginPage() {
         <p className="text-center text-xs text-gray-400 mt-6">
           Uganda Primary AI Learning System © 2026
         </p>
-        <p className="text-center text-xs text-gray-300 mt-1 break-all">
-          API: {process.env.NEXT_PUBLIC_API_URL ?? 'https://uganda-ai-learning-production.up.railway.app/api/v1'}
-        </p>
       </div>
     </div>
   );
