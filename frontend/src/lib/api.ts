@@ -1,7 +1,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://uganda-ai-learning-production.up.railway.app/api/v1';
+const _raw = (process.env.NEXT_PUBLIC_API_URL ?? 'https://uganda-ai-learning-production.up.railway.app/api/v1').replace(/\/$/, '');
+const BASE_URL = _raw.endsWith('/api/v1') ? _raw : `${_raw}/api/v1`;
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
