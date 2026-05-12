@@ -66,6 +66,14 @@ try:
     u.save()
     total = User.objects.count()
     print(f"[OK] Admin {'created' if created else 'updated'}: {uname}  (total users: {total})")
+    print(f"[INFO] Password used: {pwd[:3]}***{pwd[-2:]} (len={len(pwd)})")
+    # Verify auth works immediately
+    from django.contrib.auth import authenticate as auth_check
+    test = auth_check(request=None, username=uname, password=pwd)
+    if test:
+        print(f"[OK] Auth test PASSED — login will work with username={uname}")
+    else:
+        print(f"[WARN] Auth test FAILED — credentials may be wrong. Try username={uname} pw={pwd[:3]}***")
 except Exception:
     print("[ERROR] Admin creation failed with exception:")
     traceback.print_exc()
