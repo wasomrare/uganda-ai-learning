@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -119,6 +120,11 @@ export default function LoginPage() {
               {isSubmitting ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
+
+          <p className="text-center text-sm text-gray-500 mt-5">
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="text-green-600 font-medium hover:underline">Create one</Link>
+          </p>
 
           {GOOGLE_CLIENT_ID && (
             <>

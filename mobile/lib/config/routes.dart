@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/signup_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/subjects/subjects_screen.dart';
@@ -39,13 +40,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final isLoggedIn = authAsync.valueOrNull?.isLoggedIn ?? false;
       final role = authAsync.valueOrNull?.user?.role ?? 'student';
+      final isSignup = state.matchedLocation == '/signup';
 
       if (isSplash) {
         return isLoggedIn
             ? (role == 'teacher' ? '/teacher' : '/home')
             : '/login';
       }
-      if (!isLoggedIn && !isLogin) return '/login';
+      if (!isLoggedIn && !isLogin && !isSignup) return '/login';
       if (isLoggedIn && isLogin) {
         return role == 'teacher' ? '/teacher' : '/home';
       }
@@ -54,6 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/signup', builder: (_, __) => const SignupScreen()),
 
       // Student routes
       ShellRoute(

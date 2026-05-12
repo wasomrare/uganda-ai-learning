@@ -17,7 +17,7 @@ from core.utils import get_client_ip, success_response
 from apps.users.models import User
 from .models import LoginHistory, UserDevice, PasswordResetToken
 from .serializers import (
-    LoginSerializer, LogoutSerializer,
+    RegisterSerializer, LoginSerializer, LogoutSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     UserDeviceSerializer, LoginHistorySerializer,
 )
@@ -110,6 +110,54 @@ class GoogleLoginView(APIView):
                 'force_password_change': False,
             },
         }, 'Google login successful.'))
+
+
+class RegisterView(APIView):
+    """Self-registration — creates account and returns JWT tokens immediately. No verification required."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = User(
+            username=data['username'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            email=data.get('email') or None,
+            role=data.get('role', 'student'),
+            is_active=True,
+            is_verified=True,
+            force_password_change=False,
+        )
+        user.set_password(data['password'])
+        user.save()
+
+        ip = get_client_ip(request)
+        ua = request.META.get('HTTP_USER_AGENT', '')
+        LoginHistory.objects.create(
+            user=user,
+            ip_address=ip or None,
+            user_agent=ua[:255],
+            success=True,
+            failure_reason='',
+        )
+
+        refresh = RefreshToken.for_user(user)
+        return Response(success_response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': str(user.id),
+                'username': user.username,
+                'full_name': user.get_full_name(),
+                'email': user.email,
+                'role': user.role,
+                'avatar': None,
+                'force_password_change': False,
+            },
+        }, 'Account created successfully.'), status=201)
 
 
 class LoginView(APIView):

@@ -32,6 +32,35 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class RegisterSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=True, max_length=100)
+    last_name = serializers.CharField(required=True, max_length=100)
+    username = serializers.CharField(required=True, max_length=150)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    password = serializers.CharField(required=True, min_length=6, write_only=True)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+    role = serializers.ChoiceField(choices=['student', 'teacher', 'parent'], default='student')
+
+    def validate_username(self, value):
+        from apps.users.models import User
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError('This username is already taken.')
+        return value
+
+    def validate_email(self, value):
+        if not value:
+            return value
+        from apps.users.models import User
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('An account with this email already exists.')
+        return value
+
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({'confirm_password': 'Passwords do not match.'})
+        return data
+
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True)

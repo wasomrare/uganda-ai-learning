@@ -73,6 +73,42 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
   }
 
+  Future<void> register({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String confirmPassword,
+    String role = 'student',
+    String? email,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final api = ref.read(apiServiceProvider);
+      final storage = ref.read(storageServiceProvider);
+      final res = await api.register(
+        firstName: firstName,
+        lastName: lastName,
+        username: username,
+        password: password,
+        confirmPassword: confirmPassword,
+        role: role,
+        email: email,
+      );
+      final data = res.data['data'];
+      await storage.saveAccessToken(data['access']);
+      await storage.saveRefreshToken(data['refresh']);
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+      await storage.saveUser(user.toJson());
+      state = AsyncValue.data(AuthState(user: user, isLoggedIn: true));
+    } catch (e) {
+      state = AsyncValue.data(AuthState(
+        isLoggedIn: false,
+        error: _parseRegisterError(e),
+      ));
+    }
+  }
+
   Future<void> googleLogin() async {
     state = const AsyncValue.loading();
     try {
@@ -126,5 +162,23 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     if (e.toString().contains('401')) return 'Invalid username or password.';
     if (e.toString().contains('network')) return 'Network error. Check your connection.';
     return 'Login failed. Please try again.';
+  }
+
+  String _parseRegisterError(dynamic e) {
+    try {
+      final data = e.response?.data;
+      if (data is Map) {
+        final errs = data['errors'];
+        if (errs is Map && errs.isNotEmpty) {
+          final first = errs.values.first;
+          if (first is List && first.isNotEmpty) return first.first.toString();
+          return first.toString();
+        }
+        if (data['error'] != null) return data['error'].toString();
+        if (data['message'] != null) return data['message'].toString();
+      }
+    } catch (_) {}
+    if (e.toString().contains('network')) return 'Network error. Check your connection.';
+    return 'Registration failed. Please try again.';
   }
 }

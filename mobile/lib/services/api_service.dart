@@ -82,6 +82,24 @@ class ApiService {
       _dio.delete(path);
 
   // Auth
+  Future<Response> register({
+    required String firstName,
+    required String lastName,
+    required String username,
+    required String password,
+    required String confirmPassword,
+    String role = 'student',
+    String? email,
+  }) => _dio.post('/auth/register/', data: {
+    'first_name': firstName,
+    'last_name': lastName,
+    'username': username,
+    'password': password,
+    'confirm_password': confirmPassword,
+    'role': role,
+    if (email != null && email.isNotEmpty) 'email': email,
+  });
+
   Future<Response> login(String username, String password) =>
       _dio.post('/auth/login/', data: {'username': username, 'password': password});
 
