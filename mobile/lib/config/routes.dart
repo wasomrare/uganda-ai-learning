@@ -35,8 +35,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSplash = state.matchedLocation == '/splash';
       final isLogin = state.matchedLocation == '/login';
 
-      // Still loading — stay on splash
-      if (authAsync.isLoading) return isSplash ? null : '/splash';
+      // Still loading — stay wherever we are (login screen shows its own spinner)
+      if (authAsync.isLoading) return null;
 
       final isLoggedIn = authAsync.valueOrNull?.isLoggedIn ?? false;
       final role = authAsync.valueOrNull?.user?.role ?? 'student';
