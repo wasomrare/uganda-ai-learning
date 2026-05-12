@@ -97,7 +97,7 @@ TEMPLATES = [
 # ============================================================
 # DATABASE — Railway provides DATABASE_URL automatically
 # ============================================================
-DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL')
+DATABASE_URL = os.environ.get('DATABASE_PUBLIC_URL') or os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=60)}
 else:
