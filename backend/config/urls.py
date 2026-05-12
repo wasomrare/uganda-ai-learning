@@ -3,12 +3,29 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+
+
+def health_check(request):
+    from django.db import connection
+    status = {'db': False, 'admin_exists': False, 'user_count': 0}
+    try:
+        with connection.cursor() as c:
+            c.execute('SELECT 1')
+        status['db'] = True
+        from apps.users.models import User
+        status['user_count'] = User.objects.count()
+        status['admin_exists'] = User.objects.filter(role='super_admin').exists()
+    except Exception as e:
+        status['error'] = str(e)
+    return JsonResponse(status)
 
 API_V1 = 'api/v1/'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path(f'{API_V1}health/', health_check, name='health'),
 
     # API Schema & Documentation
     path(f'{API_V1}schema/', SpectacularAPIView.as_view(), name='schema'),
