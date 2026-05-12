@@ -21,14 +21,25 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await authApi.login(username.trim(), password);
-      const { access, refresh } = res.data.data;
-      const meRes = await api.get('/users/me/', { headers: { Authorization: `Bearer ${access}` } });
-      const fullUser = meRes.data?.data ?? meRes.data;
+      const { access, refresh, user: basicUser } = res.data.data;
+
+      let fullUser = basicUser;
+      try {
+        const meRes = await api.get('/users/me/', { headers: { Authorization: `Bearer ${access}` } });
+        fullUser = meRes.data?.data ?? meRes.data ?? basicUser;
+      } catch {
+        /* me() failed — use basic user from login response */
+      }
+
       setAuth(fullUser, access, refresh);
       router.replace('/dashboard');
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { error?: string; message?: string } } };
-      setError(e?.response?.data?.error ?? e?.response?.data?.message ?? 'Invalid credentials. Please try again.');
+      const e = err as { response?: { data?: { error?: string; message?: string; detail?: string; errors?: Record<string, string[]> } } };
+      const d = e?.response?.data;
+      const msg = d?.error ?? d?.message ?? d?.detail
+        ?? (d?.errors ? Object.values(d.errors).flat()[0] : null)
+        ?? 'Login failed. Please check your credentials and try again.';
+      setError(String(msg));
     } finally {
       setLoading(false);
     }
